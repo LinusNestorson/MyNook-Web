@@ -1,25 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useHouse } from '../context/HouseContext';
 
 export default function ColorTracker() {
-  const [colors, setColors] = useState(() => {
-    const saved = localStorage.getItem('house-colors');
-    return saved ? JSON.parse(saved) : [
-      { id: 1, ncs: 'S 0502-Y', name: 'Eggshell White', room: 'Living Room' },
-      { id: 2, ncs: 'S 4502-B', name: 'Cool Grey', room: 'Kitchen' },
-    ];
-  });
-  const [newColor, setNewColor] = useState({ ncs: '', name: '', room: '' });
-
-  useEffect(() => {
-    localStorage.setItem('house-colors', JSON.stringify(colors));
-  }, [colors]);
+  // Use the global context instead of local state
+  const { colors, addColor, deleteColor, rooms, getRoomName } = useHouse();
+  
+  const [newColor, setNewColor] = useState({ ncs: '', name: '', roomId: '' });
 
   const handleAddColor = (e) => {
     e.preventDefault();
-    if (!newColor.ncs || !newColor.name || !newColor.room) return;
+    if (!newColor.ncs || !newColor.name || !newColor.roomId) {
+        alert("Please fill in all fields and select a room.");
+        return;
+    }
 
-    setColors([...colors, { ...newColor, id: Date.now() }]);
-    setNewColor({ ncs: '', name: '', room: '' });
+    addColor(newColor);
+    setNewColor({ ncs: '', name: '', roomId: '' });
   };
 
   return (
@@ -52,18 +48,27 @@ export default function ColorTracker() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Room</label>
-            <input
-              type="text"
-              placeholder="e.g. Living Room"
-              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-              value={newColor.room}
-              onChange={(e) => setNewColor({ ...newColor, room: e.target.value })}
-            />
+            <select
+              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+              value={newColor.roomId}
+              onChange={(e) => setNewColor({ ...newColor, roomId: e.target.value })}
+            >
+                <option value="">-- Select Room --</option>
+                {rooms.map(room => (
+                    <option key={room.id} value={room.id}>
+                        {room.name} ({room.floor ? `Floor ${room.floor}` : 'No floor'})
+                    </option>
+                ))}
+            </select>
+            {rooms.length === 0 && (
+                <p className="text-xs text-red-500 mt-1">No rooms available. Create a room first.</p>
+            )}
           </div>
         </div>
         <button
           type="submit"
-          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors w-full md:w-auto"
+          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={rooms.length === 0}
         >
           Add Color
         </button>
@@ -85,10 +90,13 @@ export default function ColorTracker() {
               <tr key={color.id} className="border-b border-gray-200 hover:bg-gray-50">
                 <td className="py-3 px-6 font-medium whitespace-nowrap text-gray-900">{color.ncs}</td>
                 <td className="py-3 px-6">{color.name}</td>
-                <td className="py-3 px-6">{color.room}</td>
+                <td className="py-3 px-6">
+                    {/* Handle both new ID-based link and old string legacy data if necessary */}
+                    {color.roomId ? getRoomName(color.roomId) : (color.room || 'Unassigned')}
+                </td>
                 <td className="py-3 px-6 text-center">
                   <button
-                    onClick={() => setColors(colors.filter(c => c.id !== color.id))}
+                    onClick={() => deleteColor(color.id)}
                     className="text-red-500 hover:text-red-700 font-medium hover:underline"
                   >
                     Delete

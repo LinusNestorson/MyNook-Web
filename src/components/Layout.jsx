@@ -1,21 +1,25 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Layout() {
   const location = useLocation();
+  const { logout } = useAuth();
   
   const navigation = [
     { name: 'Dashboard', href: '/' },
+    { name: 'House Map', href: '/house' },
     { name: 'Colors', href: '/colors' },
+    { name: 'Bank Import', href: '/import' },
   ];
 
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-md">
+      <div className="w-64 bg-white shadow-md flex flex-col">
         <div className="p-6 border-b">
           <h1 className="text-2xl font-bold text-gray-800">MyNook</h1>
         </div>
-        <nav className="p-4 space-y-2">
+        <nav className="p-4 space-y-2 flex-1">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
             return (
@@ -33,6 +37,14 @@ export default function Layout() {
             );
           })}
         </nav>
+        <div className="p-4 border-t">
+            <button
+                onClick={logout}
+                className="w-full text-left px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors font-medium"
+            >
+                Sign Out
+            </button>
+        </div>
       </div>
 
       {/* Main Content */}
